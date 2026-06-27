@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ส่วนประกอบโปรแกรม Paint - ห้องเรียนครูพุทธา สร้างสือแบบง่ายๆ (AR Game Edition)</title>
+  <title>ส่วนประกอบโปรแกรม Paint - ห้องเรียนครูพุทธา สร้างสื่อแบบง่ายๆ (AR Game Edition)</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -11,16 +11,14 @@
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700&family=Prompt:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- MediaPipe Hands & Camera Utils (โหลดอย่างปลอดภัยพร้อมเริ่มประมวลผล) -->
+  <!-- MediaPipe Hands & Camera Utils -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous" defer></script>
 
   <style>
-    /* กฎเหล็กป้องกันหน้าจอค้างเทา/มืด กรณี Tailwind โหลดไม่สำเร็จหรือเครือข่ายขัดข้อง */
-    .hidden {
-      display: none !important;
-    }
+    /* กฎเหล็กป้องกันหน้าจอค้างเทา/มืด */
+    .hidden { display: none !important; }
 
     body {
       font-family: 'Prompt', sans-serif;
@@ -33,117 +31,93 @@
       overflow-x: hidden;
     }
     
-    .title-font {
-      font-family: 'Mali', cursive;
-    }
+    .title-font { font-family: 'Mali', cursive; }
 
     /* Animations */
-    @keyframes wiggle {
-      0%, 100% { transform: rotate(-5deg); }
-      50% { transform: rotate(5deg); }
-    }
+    @keyframes wiggle { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
     .wiggle { animation: wiggle 2s ease-in-out infinite; }
-    
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-10px); }
-    }
+    @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
     .float { animation: float 3s ease-in-out infinite; }
 
-    /* Interactive Zones (Learn Mode) */
-    .paint-zone {
-      position: relative;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+    /* Interactive Zones */
+    .paint-zone { position: relative; cursor: pointer; transition: all 0.2s; }
     .paint-zone::after {
-      content: '';
-      position: absolute;
+      content: ''; position: absolute;
       top: -2px; left: -2px; right: -2px; bottom: -2px;
-      border: 4px dashed transparent;
-      border-radius: 6px;
-      pointer-events: none;
-      transition: all 0.2s;
+      border: 4px dashed transparent; border-radius: 6px;
+      pointer-events: none; transition: all 0.2s;
     }
-    /* ปิดไฮไลท์ของส่วนประกอบแม่เวลากำลังตอบเกมย่อย เพื่อให้เด็กๆ โฟกัสจุดเล็กๆ */
     body:not(.ar-playing) .paint-zone:hover::after {
-      border-color: #f59e0b;
-      animation: dash-march 1s linear infinite;
+      border-color: #f59e0b; animation: dash-march 1s linear infinite;
     }
     body:not(.ar-playing) .paint-zone:hover {
-      background-color: rgba(254, 243, 199, 0.7);
-      transform: scale(1.01);
-      z-index: 10;
+      background-color: rgba(254, 243, 199, 0.7); transform: scale(1.01); z-index: 10;
     }
     
-    /* Interactive Tools (เป้าหมายย่อยเวลากำลังเล่นเกมตอบคำถาม และ Hover) */
-    .paint-tool {
-      transition: all 0.2s;
-      border: 2px solid transparent;
-      border-radius: 6px;
-    }
+    /* Interactive Tools */
+    .paint-tool { transition: all 0.2s; border: 2px solid transparent; border-radius: 6px; }
     .ar-playing .paint-tool:hover, .ar-playing .paint-tool.ar-hover {
-      background-color: rgba(254, 240, 138, 0.8) !important;
-      border-color: #eab308 !important;
-      transform: scale(1.15);
+      background-color: rgba(254, 240, 138, 0.8) !important; border-color: #eab308 !important; transform: scale(1.15);
     }
     body:not(.ar-playing) .paint-tool:hover {
-      box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
-      border-color: #fcd34d;
-      background-color: #fef3c7;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); border-color: #fcd34d; background-color: #fef3c7;
     }
     
-    /* เส้นประกล่องเป้าหมายวิบวับเพื่อบอกใบ้เด็กๆ */
-    .tool-target-hint {
-      animation: target-pulse 1.5s infinite alternate;
-    }
+    /* Tool Target Hint */
+    .tool-target-hint { animation: target-pulse 1.5s infinite alternate; }
     @keyframes target-pulse {
       0% { box-shadow: 0 0 4px #3b82f6; border-color: #3b82f6; }
       100% { box-shadow: 0 0 16px #3b82f6; border-color: #60a5fa; }
     }
+    @keyframes dash-march { to { stroke-dashoffset: -20; } }
 
-    @keyframes dash-march {
-      to { stroke-dashoffset: -20; }
-    }
-
-    /* สไตล์เมาส์วาดรูปบน Canvas */
-    #drawing-canvas { 
-      cursor: crosshair; 
-      touch-action: none; /* ป้องกันการเลื่อนหน้าจอเวลาใช้นิ้ววาดบนไอแพด */
-    }
+    #drawing-canvas { cursor: crosshair; touch-action: none; }
     
-    /* ปรับแต่ง Scrollbar ให้น่ารักกลมกลืน */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-    /* Tooltip Hover Style */
+    /* Tooltip Hover */
     #hover-tooltip {
-      position: fixed;
-      pointer-events: none;
-      z-index: 99999;
-      display: none;
-      transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
+      position: fixed; pointer-events: none; z-index: 99999;
+      display: none; transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
+    }
+
+    /* Print Styles สำหรับพิมพ์ใบประกาศให้สวยงามพอดีกระดาษ A4 แนวนอน */
+    @media print {
+      @page { size: landscape; margin: 0; }
+      body { background: none; }
+      body * { visibility: hidden; }
+      #certificate-modal {
+        display: block !important; position: absolute; left: 0; top: 0;
+        width: 100%; height: 100%; background: none; margin: 0; padding: 0;
+      }
+      #certificate-modal * { visibility: visible; }
+      #certificate-content {
+        position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+        width: 27cm; height: 18cm; box-shadow: none !important;
+        border: 10px double #facc15 !important; border-radius: 20px !important;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      }
+      .no-print { display: none !important; }
     }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center py-4 px-2 md:px-6 relative transition-all duration-300">
 
-  <!-- ฉากตกแต่งฉากหลังลอยละล่อง -->
-  <div class="fixed top-10 left-10 text-5xl opacity-40 float">☁️</div>
-  <div class="fixed top-32 right-12 text-6xl opacity-40 float" style="animation-delay: 1s">⭐</div>
-  <div class="fixed bottom-20 left-20 text-5xl opacity-40 float" style="animation-delay: 2s">🌈</div>
-  <div class="fixed bottom-10 right-32 text-6xl opacity-40 float" style="animation-delay: 1.5s">☁️</div>
+  <div class="fixed top-10 left-10 text-5xl opacity-40 float no-print">☁️</div>
+  <div class="fixed top-32 right-12 text-6xl opacity-40 float no-print" style="animation-delay: 1s">⭐</div>
+  <div class="fixed bottom-20 left-20 text-5xl opacity-40 float no-print" style="animation-delay: 2s">🌈</div>
+  <div class="fixed bottom-10 right-32 text-6xl opacity-40 float no-print" style="animation-delay: 1.5s">☁️</div>
 
-  <!-- GAME HUD (บาร์คะแนนและเป้าหมายสำหรับโหมดเกมตอบคำถาม) -->
-  <div id="game-hud" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur-sm border-4 border-yellow-400 rounded-3xl shadow-[0_10px_25px_rgba(0,0,0,0.25)] px-6 py-3 z-50 hidden flex-col items-center gap-2 transition-all duration-300 w-11/12 max-w-2xl">
+  <!-- GAME HUD -->
+  <div id="game-hud" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur-sm border-4 border-yellow-400 rounded-3xl shadow-[0_10px_25px_rgba(0,0,0,0.25)] px-6 py-3 z-50 hidden flex-col items-center gap-2 transition-all duration-300 w-11/12 max-w-2xl no-print">
     <div class="flex justify-between w-full items-center gap-2">
       <div class="bg-blue-100 text-blue-700 font-extrabold px-3 py-1 rounded-full text-xs md:text-sm shadow-inner flex items-center gap-1 shrink-0">
         🥇 LV <span id="game-level" class="text-blue-600">1</span> | ⭐ คะแนน: <span id="game-score" class="text-blue-600">0</span>
       </div>
       
-      <!-- แผงแสดงสถานะกล้องขนาดกะทัดรัดบนแถบเกม -->
       <div id="hud-camera-status" class="bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-full text-xs flex items-center gap-1.5 border border-slate-200">
         <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" id="hud-camera-dot"></span>
         <span id="hud-camera-text">ระบบกำลังเปิดกล้อง...</span>
@@ -157,7 +131,7 @@
   </div>
 
   <!-- MAIN CONTAINER -->
-  <div id="main-app" class="w-full max-w-6xl bg-white border-[6px] border-white rounded-[40px] shadow-[0_15px_40px_rgba(236,72,153,0.3)] overflow-hidden relative z-10 flex flex-col h-[90vh] transition-all duration-500">
+  <div id="main-app" class="w-full max-w-6xl bg-white border-[6px] border-white rounded-[40px] shadow-[0_15px_40px_rgba(236,72,153,0.3)] overflow-hidden relative z-10 flex flex-col h-[90vh] transition-all duration-500 no-print">
     
     <!-- HEADER SECTION -->
     <header class="bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 p-3 md:p-4 flex flex-wrap justify-between items-center relative overflow-hidden shrink-0 rounded-t-[34px]">
@@ -169,7 +143,7 @@
           <h1 class="text-xl md:text-3xl font-extrabold text-white drop-shadow-[2px_2px_0px_#000] title-font tracking-wide flex flex-wrap gap-1">
             ส่วนประกอบโปรแกรม Paint
           </h1>
-          <p class="text-xs md:text-sm text-yellow-200 font-bold drop-shadow-[1px_1px_0px_#000]">ห้องเรียนครูพุทธา สร้างสื่อแบบง่ายๆ!</p>
+          <p class="text-xs md:text-sm text-yellow-200 font-bold drop-shadow-[1px_1px_0px_#000]">ห้องเรียนครูพุทธา สร้างสื่อแบบง่ายๆ</p>
         </div>
       </div>
       
@@ -183,46 +157,31 @@
       </div>
     </header>
 
-    <!-- MOCKUP WINDOW INTERFACE (หน้าต่างโปรแกรม Paint จำลอง) -->
+    <!-- MOCKUP WINDOW INTERFACE -->
     <div class="flex-grow flex flex-col bg-gray-100 p-2 md:p-3 overflow-hidden select-none">
       
-      <!-- Top Title Bar (Zone 1, Zone 2, Zone 3) -->
       <div class="bg-blue-100 rounded-t-xl border border-blue-200 flex justify-between items-center px-2 py-1 shrink-0">
-        <!-- หมายเลข 1: แถบเครื่องมือด่วน (Quick Access Toolbar) -->
         <div id="zone-1" data-tool="zone1" class="paint-zone flex items-center gap-1.5 px-2 py-0.5 rounded" onclick="handleZoneClick(1)">
           <span class="text-lg pointer-events-none">🎨</span>
-          <!-- เป้าหมายเกมย่อย: ปุ่ม Save -->
           <span data-tool="save" onclick="handleToolClick('save', event)" class="paint-tool text-purple-700 bg-white border border-purple-200 rounded px-2 py-0.5 shadow-sm text-xs cursor-pointer font-bold relative z-20">💾 บันทึก</span>
           <span class="text-blue-600 bg-white border border-blue-200 rounded px-1.5 py-0.5 shadow-sm text-xs opacity-50 pointer-events-none">↩️</span>
           <span class="text-blue-600 bg-white border border-blue-200 rounded px-1.5 py-0.5 shadow-sm text-xs opacity-50 pointer-events-none">↪️</span>
         </div>
-
-        <!-- หมายเลข 2: แถบชื่อเรื่อง (Title Bar) -->
         <div id="zone-2" data-tool="zone2" class="paint-zone flex items-center px-4 py-0.5 rounded cursor-pointer" onclick="handleZoneClick(2)">
           <span class="text-xs text-gray-700 font-bold bg-white/70 px-3 py-1 rounded-md border border-blue-200 shadow-sm pointer-events-none">ไม่มีชื่อ - Paint</span>
         </div>
-
-        <!-- หมายเลข 3: ปุ่มควบคุมหน้าต่าง (Control Buttons) -->
         <div id="zone-3" data-tool="zone3" class="paint-zone flex gap-3 text-gray-500 pr-2 py-0.5 rounded px-2" onclick="handleZoneClick(3)">
-          <span class="pointer-events-none">➖</span>
-          <span class="pointer-events-none">⬜</span>
-          <span class="hover:text-red-500 cursor-pointer pointer-events-none">❌</span>
+          <span class="pointer-events-none">➖</span><span class="pointer-events-none">⬜</span><span class="hover:text-red-500 cursor-pointer pointer-events-none">❌</span>
         </div>
       </div>
 
-      <!-- File Menu (Zone 4) -->
       <div class="flex border-x border-b border-gray-300 bg-gray-50 text-sm shrink-0">
-        <!-- หมายเลข 4: ปุ่มไฟล์ (File Menu) -->
-        <div id="zone-4" data-tool="file" onclick="handleToolClick('file', event); handleZoneClick(4);" class="paint-zone paint-tool bg-blue-600 text-white px-5 py-1 font-bold cursor-pointer hover:bg-blue-700">
-          ไฟล์
-        </div>
+        <div id="zone-4" data-tool="file" onclick="handleToolClick('file', event); handleZoneClick(4);" class="paint-zone paint-tool bg-blue-600 text-white px-5 py-1 font-bold cursor-pointer hover:bg-blue-700">ไฟล์</div>
         <div class="px-5 py-1 bg-white border-x border-gray-300 font-bold text-blue-600 border-b-2 border-b-blue-600">หน้าแรก</div>
         <div class="px-5 py-1 text-gray-600 hover:bg-blue-50 cursor-pointer">มุมมอง</div>
       </div>
 
-      <!-- หมายเลข 5: ริบบอน (Ribbon Toolbar) -->
       <div id="zone-5" data-tool="zone5" class="paint-zone bg-white border-x border-b border-gray-300 p-2 flex gap-3 md:gap-5 overflow-x-auto min-h-[95px] shrink-0 shadow-sm" onclick="handleZoneClick(5)">
-        <!-- แถบคลิปบอร์ด -->
         <div class="flex flex-col items-center border-r border-gray-300 pr-3 pointer-events-none">
           <div class="flex gap-2 h-full items-center pointer-events-auto">
             <div class="text-4xl text-gray-400 pointer-events-none">📋</div>
@@ -235,10 +194,8 @@
           <span class="text-[10px] md:text-xs font-bold text-orange-500 mt-1 pointer-events-none">คลิปบอร์ด</span>
         </div>
         
-        <!-- แถบรูปภาพ -->
         <div class="flex flex-col items-center border-r border-gray-300 pr-3 pointer-events-none">
           <div class="flex gap-2 h-full items-center pointer-events-auto">
-            <!-- เป้าหมายเกมย่อย: เครื่องมือครอบวัตถุ -->
             <div data-tool="selection" onclick="handleToolClick('selection', event)" class="paint-tool border border-blue-400 border-dashed p-1.5 text-blue-500 bg-blue-50 rounded flex flex-col items-center cursor-pointer relative z-20">
               ⬚<span class="text-[9px] font-bold pointer-events-none">เลือกวัตถุ</span>
             </div>
@@ -251,46 +208,32 @@
           <span class="text-[10px] font-bold text-green-500 mt-1 pointer-events-none">รูปภาพ</span>
         </div>
 
-        <!-- แถบย่อยชุดเครื่องมือ -->
         <div class="flex flex-col items-center border-r border-gray-300 pr-3 justify-between pointer-events-none">
           <div class="grid grid-cols-3 gap-1 md:gap-2 text-xl px-1 pointer-events-auto">
-            <!-- เป้าหมายเกมย่อย: ดินสอ -->
-            <span data-tool="pencil" onclick="handleToolClick('pencil', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center relative z-20" title="ดินสอ">✏️</span>
-            <!-- เป้าหมายเกมย่อย: ถังสี -->
-            <span data-tool="bucket" onclick="handleToolClick('bucket', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center relative z-20" title="ถังสี">🪣</span>
-            <!-- เป้าหมายเกมย่อย: ตัวอักษร A -->
-            <span data-tool="text" onclick="handleToolClick('text', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center font-serif text-blue-800 font-bold relative z-20" title="กล่องข้อความ">A</span>
-            <!-- เป้าหมายเกมย่อย: ยางลบ -->
-            <span data-tool="eraser" onclick="handleToolClick('eraser', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center relative z-20" title="ยางลบ">🧽</span>
-            <!-- เป้าหมายเกมย่อย: ดูดสี -->
-            <span data-tool="dropper" onclick="handleToolClick('dropper', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center text-blue-400 relative z-20" title="ดูดสี">💧</span>
-            <!-- เป้าหมายเกมย่อย: แว่นขยาย -->
-            <span data-tool="magnifier" onclick="handleToolClick('magnifier', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center relative z-20" title="แว่นขยาย">🔍</span>
+            <span data-tool="pencil" onclick="handleToolClick('pencil', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center relative z-20">✏️</span>
+            <span data-tool="bucket" onclick="handleToolClick('bucket', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center relative z-20">🪣</span>
+            <span data-tool="text" onclick="handleToolClick('text', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center font-serif text-blue-800 font-bold relative z-20">A</span>
+            <span data-tool="eraser" onclick="handleToolClick('eraser', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center relative z-20">🧽</span>
+            <span data-tool="dropper" onclick="handleToolClick('dropper', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center text-blue-400 relative z-20">💧</span>
+            <span data-tool="magnifier" onclick="handleToolClick('magnifier', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center relative z-20">🔍</span>
           </div>
           <span class="text-[10px] font-bold text-pink-500 mt-1 pointer-events-none">เครื่องมือ</span>
         </div>
 
-        <!-- แถบย่อยแปรงพู่กัน & รูปร่าง -->
         <div class="flex flex-col items-center border-r border-gray-300 pr-3 justify-between pointer-events-none">
           <div class="flex gap-3 h-full items-center pointer-events-auto">
-            <!-- เป้าหมายเกมย่อย: แปรงพู่กัน -->
             <div data-tool="brush" onclick="handleToolClick('brush', event)" class="paint-tool text-3xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 rounded px-2 py-1 relative z-20">
               🖌️<span class="text-[10px] font-bold text-blue-600 mt-1 pointer-events-none">แปรง ▼</span>
             </div>
-            <!-- เป้าหมายเกมย่อย: กล่องรูปทรง Shapes -->
             <div data-tool="shapes" onclick="handleToolClick('shapes', event)" class="paint-tool flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 rounded px-2 py-1 relative z-20">
-              <div class="grid grid-cols-3 gap-0.5 text-xs text-slate-600 pointer-events-none">
-                <span>○</span><span>⬜</span><span>☆</span>
-              </div>
+              <div class="grid grid-cols-3 gap-0.5 text-xs text-slate-600 pointer-events-none"><span>○</span><span>⬜</span><span>☆</span></div>
               <span class="text-[10px] font-bold text-purple-600 mt-1 pointer-events-none">รูปร่าง ▼</span>
             </div>
           </div>
           <span class="text-[10px] font-bold text-indigo-500 pointer-events-none">รูปร่าง & แปรง</span>
         </div>
 
-        <!-- แถบพาเลทจานสี -->
         <div class="flex flex-col items-center pr-2 pointer-events-none">
-          <!-- เป้าหมายเกมย่อย: จานเลือกสีหลัก -->
           <div data-tool="colors" onclick="handleToolClick('colors', event)" class="paint-tool flex gap-3 h-full items-center p-1 rounded relative z-20 pointer-events-auto">
             <div class="flex flex-col items-center pointer-events-none">
               <div id="current-color-box" class="w-8 h-8 bg-black border border-gray-300 rounded shadow-sm"></div>
@@ -312,7 +255,6 @@
               <div class="w-4 h-4 bg-sky-300 cursor-pointer hover:scale-110" onclick="changeColor('#7dd3fc', event)"></div>
               <div class="w-4 h-4 bg-purple-500 cursor-pointer hover:scale-110" onclick="changeColor('#a855f7', event)"></div>
             </div>
-            <!-- เป้าหมายเกมย่อย: ปุ่มแก้ไขสีเพิ่มเติม -->
             <div data-tool="editcolors" onclick="handleToolClick('editcolors', event)" class="paint-tool flex flex-col items-center justify-center p-1 rounded cursor-pointer hover:bg-gray-100 px-1 relative z-20 pointer-events-auto">
               <div class="w-6 h-6 rounded border border-gray-300 pointer-events-none" style="background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);"></div>
               <span class="text-[8px] mt-0.5 font-bold text-slate-600 pointer-events-none">แก้ไขสี</span>
@@ -322,11 +264,8 @@
         </div>
       </div>
 
-      <!-- หมายเลข 6: พื้นที่วาดรูป (Canvas / Drawing Area) -->
       <div class="flex-grow bg-[#e5e7eb] p-2 md:p-4 overflow-auto flex justify-center items-start h-full">
-        <!-- เป้าหมายเกมย่อย: แผ่นกระดาษขาว Canvas -->
         <div id="zone-6" data-tool="canvas" onclick="handleToolClick('canvas', event); handleZoneClick(6);" class="paint-zone paint-tool relative bg-white shadow-md border border-gray-400 w-full max-w-[800px] h-[300px] md:h-[400px]">
-          <!-- แคนวาสสำรองสำหรับการขีดเขียนจริงด้วยเมาส์/นิ้ว -->
           <canvas id="drawing-canvas" width="800" height="400" class="absolute inset-0 z-10 w-full h-full"></canvas>
           <div class="absolute inset-0 pointer-events-none opacity-50 overflow-hidden z-0">
             <div class="absolute top-5 left-10 text-5xl text-yellow-400">☀️</div>
@@ -337,17 +276,13 @@
         </div>
       </div>
 
-      <!-- หมายเลข 7: แถบสถานะ (Status Bar) -->
       <div id="zone-7" data-tool="zone7" class="paint-zone bg-gray-100 border-t border-x border-gray-300 px-4 py-1 text-xs text-gray-600 flex flex-wrap justify-between items-center rounded-b-xl shrink-0" onclick="handleZoneClick(7)">
         <div class="flex items-center gap-4 pointer-events-none">
           <div class="flex items-center gap-1 hover:bg-gray-200 px-1 rounded cursor-pointer pointer-events-auto">
             <span class="text-gray-400 pointer-events-none">✛</span> <span id="mouse-coords" class="pointer-events-none">0, 0px</span>
           </div>
-          <div class="hidden md:flex items-center gap-1 border-l border-gray-300 pl-4">
-             📏 800 × 400px
-          </div>
+          <div class="hidden md:flex items-center gap-1 border-l border-gray-300 pl-4">📏 800 × 400px</div>
         </div>
-        <!-- เป้าหมายเกมย่อย: ปุ่มและสไลเดอร์ซูม -->
         <div data-tool="zoom" onclick="handleToolClick('zoom', event)" class="paint-tool flex items-center gap-2 p-1 rounded relative z-20 pointer-events-auto">
           <span class="pointer-events-none">100%</span>
           <span class="cursor-pointer hover:text-black pointer-events-none">➖</span>
@@ -357,10 +292,9 @@
       </div>
     </div>
     
-    <!-- FOOTER INSTRUCTIONS -->
-    <footer class="bg-white p-3 border-t border-gray-200 flex justify-between items-center shrink-0 z-10">
+    <footer class="bg-white p-3 border-t border-gray-200 flex justify-between items-center shrink-0 z-10 no-print">
       <div class="text-sm text-pink-600 font-bold animate-pulse flex items-center gap-2">
-        <span>👆</span> โหมดปกติ: ชี้เมาส์หรือคลิกที่เครื่องมือต่างๆ เพื่อเรียนรู้ | โหมดเกม: ตามหาไอคอนตามคำสั่ง!
+        <span>👆</span> โหมดปกติ: ชี้เมาส์หรือคลิกที่เครื่องมือต่างๆ | โหมดเกม: ตอบถูกครบ 10 ข้อรับใบประกาศเลย!
       </div>
       <button onclick="openTips()" class="bg-yellow-100 text-orange-600 border-2 border-yellow-300 px-4 py-1.5 rounded-xl flex items-center gap-2 hover:bg-yellow-200 hover:scale-105 transition-all shadow-sm font-bold text-sm">
         <span class="text-lg">💡</span> เกร็ดน่ารู้ฟีเจอร์ใหม่
@@ -368,35 +302,79 @@
     </footer>
   </div>
 
-  <!-- FLOATING TOOLTIP FOR HOVER (โหมดปกติ) -->
-  <div id="hover-tooltip" class="bg-white rounded-2xl border-4 border-yellow-400 shadow-[4px_4px_0px_rgba(0,0,0,0.15)] p-3 w-64 opacity-0 scale-95">
-    <div id="tooltip-title" class="text-sm font-extrabold text-indigo-700 border-b border-gray-100 pb-1 mb-1">
-      <!-- Title -->
-    </div>
-    <div id="tooltip-desc" class="text-xs text-gray-700 font-medium mb-2 leading-relaxed">
-      <!-- Description -->
-    </div>
+  <!-- FLOATING TOOLTIP FOR HOVER -->
+  <div id="hover-tooltip" class="bg-white rounded-2xl border-4 border-yellow-400 shadow-[4px_4px_0px_rgba(0,0,0,0.15)] p-3 w-64 opacity-0 scale-95 no-print">
+    <div id="tooltip-title" class="text-sm font-extrabold text-indigo-700 border-b border-gray-100 pb-1 mb-1"></div>
+    <div id="tooltip-desc" class="text-xs text-gray-700 font-medium mb-2 leading-relaxed"></div>
     <div class="bg-blue-50 text-blue-800 text-[11px] font-bold p-2 rounded-lg border border-blue-200">
       <span id="tooltip-example">💡 ตัวอย่าง: </span>
     </div>
   </div>
 
-  <!-- AR PREVIEW CAMERA PANEL (ซ่อนอย่างสมบูรณ์แบบเพื่อไม่ให้ขัดสายตา มีขนาดกะทัดรัดเพื่อความปลอดภัยสูง) -->
-  <div id="ar-preview" class="fixed top-0 left-0 w-[1px] h-[1px] opacity-0 pointer-events-none z-[-100] overflow-hidden">
+  <!-- AR PREVIEW CAMERA PANEL -->
+  <div id="ar-preview" class="fixed top-0 left-0 w-[1px] h-[1px] opacity-0 pointer-events-none z-[-100] overflow-hidden no-print">
     <video id="webcam" class="absolute inset-0 w-full h-full object-cover transform scale-x-[-1]" playsinline muted></video>
     <canvas id="ar-overlay" class="absolute inset-0 w-full h-full transform scale-x-[-1]"></canvas>
   </div>
 
-  <!-- MAGIC HAND AR CURSOR (พิกัดเคอร์เซอร์ประกายมนต์ชี้จุดกล้องคอม) -->
-  <div id="ar-cursor" class="fixed w-8 h-8 rounded-full border-4 border-yellow-400 bg-white/50 shadow-[0_0_15px_#facc15] hidden justify-center items-center z-[9999] pointer-events-none transform -translate-x-1/2 -translate-y-1/2 transition-transform duration-75">
+  <!-- MAGIC HAND AR CURSOR -->
+  <div id="ar-cursor" class="fixed w-8 h-8 rounded-full border-4 border-yellow-400 bg-white/50 shadow-[0_0_15px_#facc15] hidden justify-center items-center z-[9999] pointer-events-none transform -translate-x-1/2 -translate-y-1/2 transition-transform duration-75 no-print">
     <div class="w-2 h-2 bg-red-500 rounded-full" id="ar-cursor-center"></div>
   </div>
   
-  <!-- Canvas สำหรับเอฟเฟกต์ประจุดไฟตกระเบิด -->
-  <canvas id="fx-canvas" class="fixed inset-0 pointer-events-none z-[9998]"></canvas>
+  <canvas id="fx-canvas" class="fixed inset-0 pointer-events-none z-[9998] no-print"></canvas>
 
-  <!-- INFO & DIALOG MODAL (สำหรับเรียนรู้ทั่วไปตอนคลิกโซนใหญ่) -->
-  <div id="info-modal" class="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4">
+  <!-- CERTIFICATE MODAL (แสดงเมื่อจบเกม 100 คะแนน) -->
+  <div id="certificate-modal" class="fixed inset-0 bg-black/80 z-[9999] flex items-center justify-center hidden p-2 md:p-4 transition-all duration-300">
+    <div id="certificate-content" class="bg-white rounded-[32px] p-6 md:p-10 max-w-3xl w-full border-[12px] border-double border-yellow-400 shadow-[0_0_40px_rgba(250,204,21,0.6)] text-center relative overflow-hidden bg-cover bg-center">
+      <!-- มุมทองประดับ -->
+      <div class="absolute top-0 left-0 w-12 h-12 md:w-16 md:h-16 border-t-8 border-l-8 border-yellow-500 m-4 rounded-tl-xl no-print"></div>
+      <div class="absolute top-0 right-0 w-12 h-12 md:w-16 md:h-16 border-t-8 border-r-8 border-yellow-500 m-4 rounded-tr-xl no-print"></div>
+      <div class="absolute bottom-0 left-0 w-12 h-12 md:w-16 md:h-16 border-b-8 border-l-8 border-yellow-500 m-4 rounded-bl-xl no-print"></div>
+      <div class="absolute bottom-0 right-0 w-12 h-12 md:w-16 md:h-16 border-b-8 border-r-8 border-yellow-500 m-4 rounded-br-xl no-print"></div>
+
+      <div class="text-5xl md:text-6xl mb-2 md:mb-4 animate-bounce">🏆</div>
+      <h2 class="text-3xl md:text-5xl font-extrabold text-indigo-700 mb-2 title-font">ใบประกาศเกียรติคุณ</h2>
+      <p class="text-base md:text-xl text-gray-600 font-medium mb-6">ขอมอบเกียรติบัตรฉบับนี้เพื่อแสดงว่า</p>
+
+      <!-- ส่วนกรอกชื่อ -->
+      <div id="cert-name-section" class="mb-6 no-print flex flex-col items-center w-full">
+        <input type="text" id="student-name-input" class="w-full max-w-md px-4 py-3 text-center text-xl md:text-2xl border-4 border-indigo-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors" placeholder="พิมพ์ชื่อ-นามสกุล..." />
+        <button onclick="generateCertName()" class="mt-4 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-8 rounded-xl shadow-[0_4px_0px_#4f46e5] active:translate-y-1 active:shadow-none transition-all text-base md:text-lg">
+          ✍️ ยืนยันชื่อรับใบประกาศ
+        </button>
+      </div>
+
+      <!-- ส่วนแสดงชื่อที่กรอกแล้ว -->
+      <h1 id="cert-name-display" class="text-3xl md:text-5xl font-bold text-pink-600 mb-8 hidden title-font border-b-4 border-dashed border-pink-200 inline-block pb-2 px-4 md:px-8 min-w-[50%]"></h1>
+
+      <p class="text-sm md:text-xl text-gray-700 font-medium mb-2">ได้ผ่านการทดสอบทักษะความรู้</p>
+      <h3 class="text-xl md:text-3xl font-bold text-blue-600 mb-8 bg-blue-50 py-2 rounded-xl inline-block px-4 md:px-6 border border-blue-200">"ส่วนประกอบโปรแกรม Paint"</h3>
+
+      <div class="flex justify-center items-center gap-4 md:gap-8 mb-8">
+         <div class="bg-yellow-50 border-4 border-yellow-400 rounded-2xl p-4 md:p-6 w-36 md:w-48 shadow-inner">
+           <div class="text-xs md:text-base text-yellow-700 font-bold mb-1">คะแนนรวม</div>
+           <div class="text-4xl md:text-5xl font-black text-yellow-600"><span id="cert-score">100</span></div>
+         </div>
+         <div class="w-24 h-24 md:w-32 md:h-32 bg-yellow-400 rounded-full flex flex-col items-center justify-center border-4 border-white shadow-[0_0_15px_rgba(250,204,21,0.8)] relative transform rotate-12">
+            <div class="text-4xl md:text-5xl">🏅</div>
+            <div class="absolute -bottom-3 bg-red-500 text-white text-[10px] md:text-xs px-3 py-1 rounded-full font-bold border-2 border-white">ผ่านเกณฑ์</div>
+         </div>
+      </div>
+
+      <div class="flex flex-wrap gap-4 justify-center no-print mt-4">
+        <button onclick="window.print()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 md:px-8 rounded-2xl text-base md:text-lg shadow-[0_4px_0px_#166534] active:translate-y-1 active:shadow-none transition-all flex items-center gap-2 hidden" id="btn-print-cert">
+          🖨️ พิมพ์ส่งครู
+        </button>
+        <button onclick="closeCertificate()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 md:px-8 rounded-2xl text-base md:text-lg shadow-[0_4px_0px_#9ca3af] active:translate-y-1 active:shadow-none transition-all">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFO & DIALOG MODAL (Learn Mode ONLY) -->
+  <div id="info-modal" class="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4 no-print">
     <div class="bg-white rounded-[32px] p-6 max-w-lg w-full border-8 border-transparent shadow-[8px_8px_0px_#000] transform scale-90 transition-transform duration-300 relative" id="info-modal-content">
       <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 hover:rotate-90 transition-transform text-3xl font-black bg-gray-100 w-10 h-10 rounded-full flex items-center justify-center z-10">&times;</button>
       <div class="flex justify-start items-center border-b-2 border-pink-100 pb-3 mb-4 pr-10">
@@ -415,8 +393,8 @@
     </div>
   </div>
 
-  <!-- EXTRA TIPS MODAL (เกร็ดน่ารู้) -->
-  <div id="tips-modal" class="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4">
+  <!-- EXTRA TIPS MODAL -->
+  <div id="tips-modal" class="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4 no-print">
     <div class="bg-white rounded-[32px] p-6 max-w-2xl w-full border-8 border-yellow-400 shadow-[8px_8px_0px_#000] transform scale-90 transition-transform duration-300 relative overflow-hidden" id="tips-modal-content">
       <button onclick="closeTips()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 text-3xl font-black bg-gray-100 w-10 h-10 rounded-full flex items-center justify-center z-20">&times;</button>
       <div class="flex items-center gap-3 border-b-2 border-yellow-100 pb-3 mb-4 relative z-10">
@@ -437,8 +415,8 @@
     </div>
   </div>
 
-  <!-- CUSTOM ALERTS MODAL FOR ERROR HANDLING (ป้องกันป็อปอัปเบราว์เซอร์ขัดข้อง) -->
-  <div id="alert-modal" class="fixed inset-0 bg-black/70 z-[9999] flex items-center justify-center hidden p-4">
+  <!-- CUSTOM ALERTS MODAL -->
+  <div id="alert-modal" class="fixed inset-0 bg-black/70 z-[9999] flex items-center justify-center hidden p-4 no-print">
     <div class="bg-white rounded-[32px] p-6 max-w-md w-full border-8 border-yellow-400 shadow-[8px_8px_0px_#000] text-center">
       <div class="text-6xl mb-3">⚠️</div>
       <h3 id="alert-title" class="text-2xl font-extrabold text-amber-600 mb-2">กล้องหรือระบบ AR ไม่พร้อมทำงาน</h3>
@@ -453,7 +431,7 @@
 
   <script>
     /* =========================================
-       AUDIO SYNTHESIS (WEB AUDIO API)
+       AUDIO SYNTHESIS (WEB AUDIO API - ปลอดภัยสูง ป้องกันแครช)
        ========================================= */
     let audioCtx;
     
@@ -537,7 +515,7 @@
     }
 
     /* =========================================
-       ข้อมูลโซนหลัก 7 โซน (สำหรับคลิกแสดง Modal ใหญ่)
+       ข้อมูลโซนหลัก 7 โซน
        ========================================= */
     const zonesData = {
       1: {
@@ -571,18 +549,15 @@
     };
 
     /* =========================================
-       ข้อมูลรายละเอียดคำอธิบายเมื่อเอาเมาส์ชี้เครื่องมือ (Hover Tooltips Data)
-       ครอบคลุมทั้งเครื่องมือย่อยและโซนหมายเลข 1-7
+       Hover Tooltips Data
        ========================================= */
     const tooltipsData = {
-      // โซนหลัก 1-7
       "zone1": { icon: "💾", name: "1. แถบเครื่องมือด่วน", desc: "ปุ่มคำสั่งลัดที่เราใช้บ่อยที่สุดเพื่อความรวดเร็ว", example: "กดเพื่อบันทึกงาน (Save) หรือย้อนกลับ (Undo) ได้ทันที" },
       "zone2": { icon: "📝", name: "2. แถบชื่อเรื่อง", desc: "บอกให้รู้ว่าไฟล์งานนี้ชื่ออะไร และเปิดโปรแกรมอะไรอยู่", example: "ถ้าเพิ่งเปิดโปรแกรม จะเขียนว่า 'ไม่มีชื่อ - Paint'" },
       "zone3": { icon: "❌", name: "3. ปุ่มควบคุมหน้าต่าง", desc: "เอาไว้จัดการหน้าจอโปรแกรม เช่น พับเก็บหรือปิด", example: "กดกากบาทสีแดง ❌ เพื่อออกจากโปรแกรมเลย" },
       "zone5": { icon: "🎨", name: "5. แถบริบบอน (Ribbon)", desc: "แผงเครื่องมือขนาดยักษ์ที่รวมทุกอย่างไว้ในที่เดียว", example: "จะหาดินสอ ยางลบ หรือจานสี ก็กดเลือกจากตรงนี้ได้เลย" },
       "zone7": { icon: "🔍", name: "7. แถบสถานะ (Status Bar)", desc: "แถบด้านล่างสุด คอยบอกข้อมูลสำคัญของรูปภาพ", example: "ดูพิกัดเมาส์ หรือกดซูมเข้าซูมออกกระดาษวาดรูป" },
       
-      // เครื่องมือย่อย
       "save": { icon: "💾", name: "บันทึก (Save)", desc: "บันทึกผลงานวาดรูปแสนสวยเก็บไว้ในคอมพิวเตอร์", example: "วาดรูปเสร็จแล้ว กดปุ่มนี้เพื่อป้องกันรูปหายไป" },
       "file": { icon: "📁", name: "4. ปุ่มไฟล์ (File Menu)", desc: "เปิดแถบเมนูหลักในการจัดการกระดาษและเอกสาร", example: "คลิกเพื่อสั่งปรินต์รูปวาด หรือเปิดกระดาษใบใหม่" },
       "cut": { icon: "✂️", name: "ตัด (Cut)", desc: "ตัดชิ้นงานที่เลือกอยู่ออกไปจากหน้ากระดาษ", example: "ตัดรูปก้อนเมฆที่วาดย้ายไปวางที่อื่นแทน" },
@@ -607,7 +582,7 @@
     };
 
     /* =========================================
-       SPECIFIC GAME MISSIONS (คำถามสุ่มท้าทายเครื่องมือ)
+       SPECIFIC GAME MISSIONS
        ========================================= */
     const gameMissions = [
       { tool: "pencil", name: "ดินสอสำหรับวาดเส้น (Pencil) ✏️" },
@@ -637,16 +612,15 @@
       isARPlaying: false,
       score: 0,
       level: 1,
-      currentMission: null
+      currentMission: null,
+      targetScore: 100 // ตั้งเป้าหมาย 100 คะแนน (10 ข้อ) เพื่อรับใบประกาศ
     };
 
-    /* --- ตัวควบคุมเมื่อคลิกกล่องเมนูหลัก (จะข้ามถ้ากำลังรันเกมย่อย) --- */
     function handleZoneClick(zoneId) {
       if (currentGameState.isARPlaying) return; 
       openModal(zoneId);
     }
 
-    // ตัวควบคุมการตอบคำถามของเครื่องมือย่อยเมื่อคลิก
     function handleToolClick(toolName, event) {
       if (currentGameState.isARPlaying) {
         event.stopPropagation(); 
@@ -655,23 +629,18 @@
     }
 
     /* =========================================
-       ระบบป๊อปอัปคำอธิบายอัตโนมัติเมื่อนำเมาส์ชี้ (Hover Tooltips)
+       ระบบ Tooltips โหมดปกติ
        ========================================= */
     document.addEventListener("DOMContentLoaded", function() {
       const tooltip = document.getElementById('hover-tooltip');
       const titleEl = document.getElementById('tooltip-title');
       const descEl = document.getElementById('tooltip-desc');
       const exampleEl = document.getElementById('tooltip-example');
-
-      // ตรวจจับการ Hover ทั้งโซนเป้าหมาย (data-tool)
       const hoverElements = document.querySelectorAll('[data-tool]');
       
       for (let i = 0; i < hoverElements.length; i++) {
         hoverElements[i].addEventListener('mouseenter', function(e) {
-          // หยุด Event ไม่ให้ทะลุไปทับกับโซนแม่
           e.stopPropagation();
-          
-          // ถ้ากำลังเล่นเกมทายคำถามอยู่ จะไม่แสดงคำอธิบายเพื่อความท้าทาย
           if (currentGameState.isARPlaying) return;
 
           const toolId = this.getAttribute('data-tool');
@@ -684,12 +653,10 @@
 
             tooltip.style.display = 'block';
             
-            // คำนวณหาตำแหน่งให้ใกล้กับเมาส์และเครื่องมือ
             const rect = this.getBoundingClientRect();
             let topPos = rect.bottom + 10;
             let leftPos = rect.left;
 
-            // ป้องกันกล่องข้อความล้นขอบจอด้านขวาและด้านล่าง
             const tooltipWidth = 256; 
             if (leftPos + tooltipWidth > window.innerWidth) {
               leftPos = window.innerWidth - tooltipWidth - 20;
@@ -701,7 +668,6 @@
             tooltip.style.top = topPos + 'px';
             tooltip.style.left = leftPos + 'px';
 
-            // แสดงกล่องข้อความอย่างนุ่มนวล
             setTimeout(function() {
               tooltip.classList.remove('opacity-0', 'scale-95');
               tooltip.classList.add('opacity-100', 'scale-100');
@@ -723,7 +689,7 @@
     });
 
     /* =========================================
-       ระบบควบคุมโหมดเกมจับคู่
+       ระบบควบคุมโหมดเกม
        ========================================= */
     function showCustomAlert(title, desc) {
       document.getElementById('alert-title').innerText = title;
@@ -733,8 +699,6 @@
 
     function closeAlertModal() {
       document.getElementById('alert-modal').classList.add('hidden');
-      
-      // บังคับเตรียม state ก่อนเล่น
       currentGameState.isARPlaying = true;
       if (currentGameState.score === 0 && currentGameState.level === 1) {
         document.getElementById('game-score').innerText = '0';
@@ -743,14 +707,13 @@
 
       document.body.classList.add('ar-playing');
       
-      // ซ่อนอุปกรณ์เกี่ยวกับกล้องทั้งหมด
       const hudStatus = document.getElementById('hud-camera-status');
       if(hudStatus) hudStatus.classList.add('hidden');
       document.getElementById('ar-preview').classList.add('hidden');
       document.getElementById('ar-cursor').classList.add('hidden');
 
       document.getElementById('game-hud').classList.remove('hidden');
-      document.getElementById('mission-text').innerHTML = '<span class="text-xl animate-pulse">🖱 *โหมดใช้เมาส์*</span> ตามหาเครื่องมือที่ครูกำหนดแล้วใช้เมาส์คลิกเพื่อเก็บคะแนนได้เลยครับ!';
+      document.getElementById('mission-text').innerHTML = '<span class="text-xl animate-pulse">🖱 *โหมดใช้เมาส์*</span> ตามหาเครื่องมือที่ครูกำหนดแล้วใช้เมาส์คลิกเพื่อเก็บคะแนนให้ถึง 100 แต้มเลยครับ!';
       
       if (!currentGameState.currentMission) {
         nextMission();
@@ -766,11 +729,10 @@
       document.getElementById('game-score').innerText = currentGameState.score;
       document.getElementById('game-level').innerText = currentGameState.level;
       
-      // ด่านแรก: เช็คว่าไลบรารีกล้องของ Google โหลดสำเร็จหรือไม่
       if (typeof Hands === 'undefined' || typeof Camera === 'undefined') {
         showCustomAlert(
           "กล้องขัดข้องเล็กน้อย",
-          "ไม่สามารถโหลดไฟล์เชื่อมต่อกล้องได้เนื่องจากข้อจำกัดบราวเซอร์ฉากหลัง แต่น้องๆ ยังสนุกกับการสะสมคะแนนได้ทันทีใน 'โหมดคลิกเมาส์จับคู่' ครับ!"
+          "ไม่สามารถโหลดไฟล์เชื่อมต่อกล้องได้เนื่องจากข้อจำกัดบราวเซอร์ฉากหลัง แต่น้องๆ ยังสนุกกับการสะสมคะแนนรับใบประกาศได้ทันทีใน 'โหมดคลิกเมาส์จับคู่' ครับ!"
         );
         return;
       }
@@ -778,16 +740,13 @@
       currentGameState.isARPlaying = true;
       document.body.classList.add('ar-playing');
       
-      // รีเซ็ตแถบไฟสถานะกล้องใน HUD
       const hudStatus = document.getElementById('hud-camera-status');
       if(hudStatus) hudStatus.classList.remove('hidden');
       updateHUDCameraStatus('red', 'ระบบกำลังเปิดกล้อง...');
       
-      // แสดงแผงควบคุมเกมย่อย
       document.getElementById('game-hud').classList.remove('hidden');
       document.getElementById('ar-preview').classList.remove('hidden');
       document.getElementById('ar-cursor').classList.remove('hidden');
-      
       document.getElementById('main-app').classList.add('scale-[0.93]', 'translate-y-8');
       
       initCamera();
@@ -805,7 +764,6 @@
       document.getElementById('game-hud').classList.add('hidden');
       document.getElementById('ar-preview').classList.add('hidden');
       document.getElementById('ar-cursor').classList.add('hidden');
-      
       document.getElementById('main-app').classList.remove('scale-[0.93]', 'translate-y-8');
       
       if (webcamStream) {
@@ -853,23 +811,37 @@
         currentGameState.score += 10;
         document.getElementById('game-score').innerText = currentGameState.score;
         
-        if (currentGameState.score % 30 === 0) {
-          currentGameState.level += 1;
-          document.getElementById('game-level').innerText = currentGameState.level;
-          playSound('levelup');
-        }
-
         const element = document.querySelector('[data-tool="' + selectedTool + '"]');
         if (element) {
           const rect = element.getBoundingClientRect();
           spawnParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, true);
+        }
+
+        // เช็คว่าผ่านเกณฑ์เป้าหมายหรือยัง (เช่น 100 คะแนน)
+        if (currentGameState.score >= currentGameState.targetScore) {
+          playSound('levelup');
+          currentGameState.currentMission = null; 
+          
+          const banner = document.getElementById('mission-text');
+          banner.className = "text-base md:text-xl font-extrabold text-green-700 text-center w-full bg-green-100 py-2.5 rounded-2xl border-4 border-green-400 animate-bounce";
+          banner.innerHTML = "🏆 ภารกิจสำเร็จ! ยอดเยี่ยมที่สุดเลย ✨";
+          
+          setTimeout(function() {
+            showCertificate(currentGameState.score);
+          }, 2000);
+          return;
+        }
+        
+        if (currentGameState.score % 30 === 0) {
+          currentGameState.level += 1;
+          document.getElementById('game-level').innerText = currentGameState.level;
+          playSound('levelup');
         }
         
         const banner = document.getElementById('mission-text');
         banner.className = "text-base md:text-xl font-extrabold text-green-700 text-center w-full bg-green-100 py-2.5 rounded-2xl border-4 border-green-400 animate-bounce";
         banner.innerHTML = "🎉 ถูกต้องแล้วครับ! ยอดเยี่ยมมาก ✨";
         
-        // หยุดทายคำตอบชั่วคราวเพื่อป้องกันการกดซ้ำซ้อนรัวๆ
         currentGameState.currentMission = null; 
 
         setTimeout(function() {
@@ -897,7 +869,58 @@
     }
 
     /* =========================================
-       กล่องแผงอธิบายชุดความรู้โซนหลัก (Learn Mode Only)
+       ระบบใบประกาศจบ (CERTIFICATE)
+       ========================================= */
+    function showCertificate(finalScore) {
+      stopARGame(); 
+      document.getElementById('cert-score').innerText = finalScore;
+      document.getElementById('certificate-modal').classList.remove('hidden');
+      
+      const inputEl = document.getElementById('student-name-input');
+      inputEl.value = "";
+      inputEl.classList.remove('border-red-500', 'bg-red-50');
+      
+      document.getElementById('cert-name-section').classList.remove('hidden');
+      document.getElementById('cert-name-display').classList.add('hidden');
+      document.getElementById('btn-print-cert').classList.add('hidden');
+      
+      playSound('magic'); 
+      
+      // พลุฉลองความสำเร็จ
+      spawnParticles(window.innerWidth/2, window.innerHeight/2, true);
+      setTimeout(function(){ spawnParticles(window.innerWidth/3, window.innerHeight/3, true); }, 300);
+      setTimeout(function(){ spawnParticles(window.innerWidth*2/3, window.innerHeight/3, true); }, 600);
+    }
+
+    function generateCertName() {
+      const inputEl = document.getElementById('student-name-input');
+      const name = inputEl.value.trim();
+      
+      if (!name) {
+        inputEl.classList.add('border-red-500', 'bg-red-50');
+        playSound('wrong');
+        setTimeout(function() { 
+          inputEl.classList.remove('border-red-500', 'bg-red-50'); 
+        }, 1000);
+        return;
+      }
+      
+      document.getElementById('cert-name-display').innerText = name;
+      document.getElementById('cert-name-section').classList.add('hidden');
+      document.getElementById('cert-name-display').classList.remove('hidden');
+      document.getElementById('btn-print-cert').classList.remove('hidden');
+      
+      playSound('pop');
+      spawnParticles(window.innerWidth/2, window.innerHeight/2, true);
+    }
+
+    function closeCertificate() {
+      document.getElementById('certificate-modal').classList.add('hidden');
+      playSound('pop');
+    }
+
+    /* =========================================
+       กล่องแผงอธิบายชุดความรู้โซนหลัก
        ========================================= */
     const colorStyles = {
       "purple": { border: "border-purple-400", bg: "bg-purple-500" },
@@ -1086,7 +1109,7 @@
                   if (currentGameState.isARPlaying) {
                     try {
                       await hands.send({ image: videoElement });
-                    } catch(sendErr) { /* ignore safe DOMException */ }
+                    } catch(sendErr) {}
                   }
                 },
                 width: 640,
@@ -1109,7 +1132,7 @@
     }
 
     /* =========================================
-       ระบบวาดเขียนจริงบนแผ่นกระดาษขาวแคนวาส (รองรับเมาส์และนิ้วสัมผัส)
+       ระบบวาดเขียนจริงบนแผ่นกระดาษขาวแคนวาส
        ========================================= */
     const drawingCanvas = document.getElementById('drawing-canvas');
     const drawCtx = drawingCanvas ? drawingCanvas.getContext('2d') : null;
@@ -1130,7 +1153,6 @@
       if (!canvas) return { x: 0, y: 0 };
       const rect = canvas.getBoundingClientRect();
       
-      // รองรับการทัชสกรีนบนไอแพด
       let clientX = evt.clientX;
       let clientY = evt.clientY;
       if (evt.touches && evt.touches.length > 0) {
@@ -1145,7 +1167,6 @@
     }
 
     if (drawingCanvas && drawCtx) {
-      // สำหรับ Mouse
       drawingCanvas.addEventListener('mousedown', function(e) {
         e.stopPropagation();
         isPainting = true;
@@ -1168,10 +1189,9 @@
       drawingCanvas.addEventListener('mouseup', function() { isPainting = false; });
       drawingCanvas.addEventListener('mouseleave', function() { isPainting = false; });
       
-      // สำหรับ Touch Screen (มือถือ / ไอแพด)
       drawingCanvas.addEventListener('touchstart', function(e) {
         e.stopPropagation();
-        e.preventDefault(); // กันหน้าจอเลื่อนเวลาวาดรูป
+        e.preventDefault(); 
         isPainting = true;
         const pos = getDrawPos(drawingCanvas, e);
         drawCtx.beginPath();
@@ -1204,7 +1224,7 @@
     }
 
     /* =========================================
-       ระบบระเบิดฝุ่นสีประกายฟองสบู่ (Confetti FX)
+       ระบบระเบิดฝุ่นสี
        ========================================= */
     const fxCanvas = document.getElementById('fx-canvas');
     const fxCtx = fxCanvas ? fxCanvas.getContext('2d') : null;
@@ -1219,15 +1239,15 @@
     resizeFx();
 
     function spawnParticles(x, y, isExplosion = false) {
-      const count = isExplosion ? 30 : 5;
+      const count = isExplosion ? 40 : 5;
       const colors = ['#facc15', '#ec4899', '#3b82f6', '#10b981', '#8b5cf6', '#f97316'];
       
       for(let i=0; i<count; i++) {
         fxParticles.push({
           x: x,
           y: y,
-          vx: (Math.random() - 0.5) * (isExplosion ? 12 : 3),
-          vy: (Math.random() - 0.5) * (isExplosion ? 12 : 3) - (isExplosion ? 2 : 1),
+          vx: (Math.random() - 0.5) * (isExplosion ? 15 : 3),
+          vy: (Math.random() - 0.5) * (isExplosion ? 15 : 3) - (isExplosion ? 2 : 1),
           life: 1,
           size: Math.random() * (isExplosion ? 8 : 4) + 2,
           color: colors[Math.floor(Math.random() * colors.length)]

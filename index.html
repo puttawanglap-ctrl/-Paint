@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ส่วนประกอบโปรแกรม Paint - ห้องเรียนครูพุทธา สร้างสื่อแบบง่ายๆ (AR Game Edition)</title>
+  <title>ส่วนประกอบโปรแกรม Paint - ห้องเรียนครูพุทธา สร้างสือแบบง่ายๆ (AR Game Edition)</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -107,7 +107,10 @@
     }
 
     /* สไตล์เมาส์วาดรูปบน Canvas */
-    #drawing-canvas { cursor: crosshair; }
+    #drawing-canvas { 
+      cursor: crosshair; 
+      touch-action: none; /* ป้องกันการเลื่อนหน้าจอเวลาใช้นิ้ววาดบนไอแพด */
+    }
     
     /* ปรับแต่ง Scrollbar ให้น่ารักกลมกลืน */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -166,7 +169,7 @@
           <h1 class="text-xl md:text-3xl font-extrabold text-white drop-shadow-[2px_2px_0px_#000] title-font tracking-wide flex flex-wrap gap-1">
             ส่วนประกอบโปรแกรม Paint
           </h1>
-          <p class="text-xs md:text-sm text-yellow-200 font-bold drop-shadow-[1px_1px_0px_#000]">ห้องเรียนครูพุทธา สร้างสื่อแบบง่ายๆ!</p>
+          <p class="text-xs md:text-sm text-yellow-200 font-bold drop-shadow-[1px_1px_0px_#000]">ห้องเรียนครูพุทธา สร้างสือแบบง่ายๆ!</p>
         </div>
       </div>
       
@@ -186,22 +189,24 @@
       <!-- Top Title Bar (Zone 1, Zone 2, Zone 3) -->
       <div class="bg-blue-100 rounded-t-xl border border-blue-200 flex justify-between items-center px-2 py-1 shrink-0">
         <!-- หมายเลข 1: แถบเครื่องมือด่วน (Quick Access Toolbar) -->
-        <div id="zone-1" class="paint-zone flex items-center gap-1.5 px-2 py-0.5 rounded" onclick="handleZoneClick(1)">
-          <span class="text-lg">🎨</span>
+        <div id="zone-1" data-tool="zone1" class="paint-zone flex items-center gap-1.5 px-2 py-0.5 rounded" onclick="handleZoneClick(1)">
+          <span class="text-lg pointer-events-none">🎨</span>
           <!-- เป้าหมายเกมย่อย: ปุ่ม Save -->
-          <span data-tool="save" onclick="handleToolClick('save', event)" class="paint-tool text-purple-700 bg-white border border-purple-200 rounded px-2 py-0.5 shadow-sm text-xs cursor-pointer font-bold">💾 บันทึก</span>
-          <span class="text-blue-600 bg-white border border-blue-200 rounded px-1.5 py-0.5 shadow-sm text-xs opacity-50">↩️</span>
-          <span class="text-blue-600 bg-white border border-blue-200 rounded px-1.5 py-0.5 shadow-sm text-xs opacity-50">↪️</span>
+          <span data-tool="save" onclick="handleToolClick('save', event)" class="paint-tool text-purple-700 bg-white border border-purple-200 rounded px-2 py-0.5 shadow-sm text-xs cursor-pointer font-bold relative z-20">💾 บันทึก</span>
+          <span class="text-blue-600 bg-white border border-blue-200 rounded px-1.5 py-0.5 shadow-sm text-xs opacity-50 pointer-events-none">↩️</span>
+          <span class="text-blue-600 bg-white border border-blue-200 rounded px-1.5 py-0.5 shadow-sm text-xs opacity-50 pointer-events-none">↪️</span>
         </div>
 
         <!-- หมายเลข 2: แถบชื่อเรื่อง (Title Bar) -->
-        <div id="zone-2" class="paint-zone flex items-center px-4 py-0.5 rounded cursor-pointer" onclick="handleZoneClick(2)">
-          <span class="text-xs text-gray-700 font-bold bg-white/70 px-3 py-1 rounded-md border border-blue-200 shadow-sm">ไม่มีชื่อ - Paint</span>
+        <div id="zone-2" data-tool="zone2" class="paint-zone flex items-center px-4 py-0.5 rounded cursor-pointer" onclick="handleZoneClick(2)">
+          <span class="text-xs text-gray-700 font-bold bg-white/70 px-3 py-1 rounded-md border border-blue-200 shadow-sm pointer-events-none">ไม่มีชื่อ - Paint</span>
         </div>
 
         <!-- หมายเลข 3: ปุ่มควบคุมหน้าต่าง (Control Buttons) -->
-        <div id="zone-3" class="paint-zone flex gap-3 text-gray-500 pr-2 py-0.5 rounded px-2" onclick="handleZoneClick(3)">
-          <span>➖</span><span>⬜</span><span class="hover:text-red-500 cursor-pointer">❌</span>
+        <div id="zone-3" data-tool="zone3" class="paint-zone flex gap-3 text-gray-500 pr-2 py-0.5 rounded px-2" onclick="handleZoneClick(3)">
+          <span class="pointer-events-none">➖</span>
+          <span class="pointer-events-none">⬜</span>
+          <span class="hover:text-red-500 cursor-pointer pointer-events-none">❌</span>
         </div>
       </div>
 
@@ -216,82 +221,82 @@
       </div>
 
       <!-- หมายเลข 5: ริบบอน (Ribbon Toolbar) -->
-      <div id="zone-5" class="paint-zone bg-white border-x border-b border-gray-300 p-2 flex gap-3 md:gap-5 overflow-x-auto min-h-[95px] shrink-0 shadow-sm" onclick="handleZoneClick(5)">
+      <div id="zone-5" data-tool="zone5" class="paint-zone bg-white border-x border-b border-gray-300 p-2 flex gap-3 md:gap-5 overflow-x-auto min-h-[95px] shrink-0 shadow-sm" onclick="handleZoneClick(5)">
         <!-- แถบคลิปบอร์ด -->
-        <div class="flex flex-col items-center border-r border-gray-300 pr-3">
-          <div class="flex gap-2 h-full items-center">
-            <div class="text-4xl text-gray-400">📋</div>
+        <div class="flex flex-col items-center border-r border-gray-300 pr-3 pointer-events-none">
+          <div class="flex gap-2 h-full items-center pointer-events-auto">
+            <div class="text-4xl text-gray-400 pointer-events-none">📋</div>
             <div class="flex flex-col text-[10px] md:text-xs text-gray-600 font-semibold gap-1">
-              <span data-tool="cut" onclick="handleToolClick('cut', event)" class="paint-tool flex items-center gap-1 hover:bg-gray-100 px-1 rounded cursor-pointer"><span class="text-red-500">✂️</span> ตัด</span>
-              <span data-tool="copy" onclick="handleToolClick('copy', event)" class="paint-tool flex items-center gap-1 hover:bg-gray-100 px-1 rounded cursor-pointer"><span class="text-blue-400">📄</span> คัดลอก</span>
-              <span data-tool="paste" onclick="handleToolClick('paste', event)" class="paint-tool flex items-center gap-1 hover:bg-gray-100 px-1 rounded cursor-pointer"><span class="text-green-500">📋</span> วาง</span>
+              <span data-tool="cut" onclick="handleToolClick('cut', event)" class="paint-tool flex items-center gap-1 hover:bg-gray-100 px-1 rounded cursor-pointer relative z-20"><span class="text-red-500 pointer-events-none">✂️</span> ตัด</span>
+              <span data-tool="copy" onclick="handleToolClick('copy', event)" class="paint-tool flex items-center gap-1 hover:bg-gray-100 px-1 rounded cursor-pointer relative z-20"><span class="text-blue-400 pointer-events-none">📄</span> คัดลอก</span>
+              <span data-tool="paste" onclick="handleToolClick('paste', event)" class="paint-tool flex items-center gap-1 hover:bg-gray-100 px-1 rounded cursor-pointer relative z-20"><span class="text-green-500 pointer-events-none">📋</span> วาง</span>
             </div>
           </div>
-          <span class="text-[10px] md:text-xs font-bold text-orange-500 mt-1">คลิปบอร์ด</span>
+          <span class="text-[10px] md:text-xs font-bold text-orange-500 mt-1 pointer-events-none">คลิปบอร์ด</span>
         </div>
         
         <!-- แถบรูปภาพ -->
-        <div class="flex flex-col items-center border-r border-gray-300 pr-3">
-          <div class="flex gap-2 h-full items-center">
+        <div class="flex flex-col items-center border-r border-gray-300 pr-3 pointer-events-none">
+          <div class="flex gap-2 h-full items-center pointer-events-auto">
             <!-- เป้าหมายเกมย่อย: เครื่องมือครอบวัตถุ -->
-            <div data-tool="selection" onclick="handleToolClick('selection', event)" class="paint-tool border border-blue-400 border-dashed p-1.5 text-blue-500 bg-blue-50 rounded flex flex-col items-center cursor-pointer">
-              ⬚<span class="text-[9px] font-bold">เลือกวัตถุ</span>
+            <div data-tool="selection" onclick="handleToolClick('selection', event)" class="paint-tool border border-blue-400 border-dashed p-1.5 text-blue-500 bg-blue-50 rounded flex flex-col items-center cursor-pointer relative z-20">
+              ⬚<span class="text-[9px] font-bold pointer-events-none">เลือกวัตถุ</span>
             </div>
             <div class="flex flex-col text-[10px] text-gray-600 font-semibold justify-center gap-0.5">
-              <span data-tool="crop" onclick="handleToolClick('crop', event)" class="paint-tool hover:bg-gray-100 px-1 rounded cursor-pointer">🔳 ครอป</span>
-              <span data-tool="resize" onclick="handleToolClick('resize', event)" class="paint-tool hover:bg-gray-100 px-1 rounded cursor-pointer">📏 ขนาด</span>
-              <span data-tool="rotate" onclick="handleToolClick('rotate', event)" class="paint-tool hover:bg-gray-100 px-1 rounded cursor-pointer">↻ หมุน ▼</span>
+              <span data-tool="crop" onclick="handleToolClick('crop', event)" class="paint-tool hover:bg-gray-100 px-1 rounded cursor-pointer relative z-20">🔳 ครอป</span>
+              <span data-tool="resize" onclick="handleToolClick('resize', event)" class="paint-tool hover:bg-gray-100 px-1 rounded cursor-pointer relative z-20">📏 ขนาด</span>
+              <span data-tool="rotate" onclick="handleToolClick('rotate', event)" class="paint-tool hover:bg-gray-100 px-1 rounded cursor-pointer relative z-20">↻ หมุน ▼</span>
             </div>
           </div>
-          <span class="text-[10px] font-bold text-green-500 mt-1">รูปภาพ</span>
+          <span class="text-[10px] font-bold text-green-500 mt-1 pointer-events-none">รูปภาพ</span>
         </div>
 
         <!-- แถบย่อยชุดเครื่องมือ -->
-        <div class="flex flex-col items-center border-r border-gray-300 pr-3 justify-between">
-          <div class="grid grid-cols-3 gap-1 md:gap-2 text-xl px-1">
+        <div class="flex flex-col items-center border-r border-gray-300 pr-3 justify-between pointer-events-none">
+          <div class="grid grid-cols-3 gap-1 md:gap-2 text-xl px-1 pointer-events-auto">
             <!-- เป้าหมายเกมย่อย: ดินสอ -->
-            <span data-tool="pencil" onclick="handleToolClick('pencil', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center" title="ดินสอ">✏️</span>
+            <span data-tool="pencil" onclick="handleToolClick('pencil', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center relative z-20" title="ดินสอ">✏️</span>
             <!-- เป้าหมายเกมย่อย: ถังสี -->
-            <span data-tool="bucket" onclick="handleToolClick('bucket', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center" title="ถังสี">🪣</span>
+            <span data-tool="bucket" onclick="handleToolClick('bucket', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center relative z-20" title="ถังสี">🪣</span>
             <!-- เป้าหมายเกมย่อย: ตัวอักษร A -->
-            <span data-tool="text" onclick="handleToolClick('text', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center font-serif text-blue-800 font-bold" title="กล่องข้อความ">A</span>
+            <span data-tool="text" onclick="handleToolClick('text', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center font-serif text-blue-800 font-bold relative z-20" title="กล่องข้อความ">A</span>
             <!-- เป้าหมายเกมย่อย: ยางลบ -->
-            <span data-tool="eraser" onclick="handleToolClick('eraser', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center" title="ยางลบ">🧽</span>
+            <span data-tool="eraser" onclick="handleToolClick('eraser', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center relative z-20" title="ยางลบ">🧽</span>
             <!-- เป้าหมายเกมย่อย: ดูดสี -->
-            <span data-tool="dropper" onclick="handleToolClick('dropper', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center text-blue-400" title="ดูดสี">💧</span>
+            <span data-tool="dropper" onclick="handleToolClick('dropper', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center text-blue-400 relative z-20" title="ดูดสี">💧</span>
             <!-- เป้าหมายเกมย่อย: แว่นขยาย -->
-            <span data-tool="magnifier" onclick="handleToolClick('magnifier', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center" title="แว่นขยาย">🔍</span>
+            <span data-tool="magnifier" onclick="handleToolClick('magnifier', event)" class="paint-tool hover:bg-gray-200 p-1 rounded cursor-pointer text-center relative z-20" title="แว่นขยาย">🔍</span>
           </div>
-          <span class="text-[10px] font-bold text-pink-500 mt-1">เครื่องมือ</span>
+          <span class="text-[10px] font-bold text-pink-500 mt-1 pointer-events-none">เครื่องมือ</span>
         </div>
 
         <!-- แถบย่อยแปรงพู่กัน & รูปร่าง -->
-        <div class="flex flex-col items-center border-r border-gray-300 pr-3 justify-between">
-          <div class="flex gap-3 h-full items-center">
+        <div class="flex flex-col items-center border-r border-gray-300 pr-3 justify-between pointer-events-none">
+          <div class="flex gap-3 h-full items-center pointer-events-auto">
             <!-- เป้าหมายเกมย่อย: แปรงพู่กัน -->
-            <div data-tool="brush" onclick="handleToolClick('brush', event)" class="paint-tool text-3xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 rounded px-2 py-1">
-              🖌️<span class="text-[10px] font-bold text-blue-600 mt-1">แปรง ▼</span>
+            <div data-tool="brush" onclick="handleToolClick('brush', event)" class="paint-tool text-3xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 rounded px-2 py-1 relative z-20">
+              🖌️<span class="text-[10px] font-bold text-blue-600 mt-1 pointer-events-none">แปรง ▼</span>
             </div>
             <!-- เป้าหมายเกมย่อย: กล่องรูปทรง Shapes -->
-            <div data-tool="shapes" onclick="handleToolClick('shapes', event)" class="paint-tool flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 rounded px-2 py-1">
-              <div class="grid grid-cols-3 gap-0.5 text-xs text-slate-600">
+            <div data-tool="shapes" onclick="handleToolClick('shapes', event)" class="paint-tool flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 rounded px-2 py-1 relative z-20">
+              <div class="grid grid-cols-3 gap-0.5 text-xs text-slate-600 pointer-events-none">
                 <span>○</span><span>⬜</span><span>☆</span>
               </div>
-              <span class="text-[10px] font-bold text-purple-600 mt-1">รูปร่าง ▼</span>
+              <span class="text-[10px] font-bold text-purple-600 mt-1 pointer-events-none">รูปร่าง ▼</span>
             </div>
           </div>
-          <span class="text-[10px] font-bold text-indigo-500">รูปร่าง & แปรง</span>
+          <span class="text-[10px] font-bold text-indigo-500 pointer-events-none">รูปร่าง & แปรง</span>
         </div>
 
         <!-- แถบพาเลทจานสี -->
-        <div class="flex flex-col items-center pr-2">
+        <div class="flex flex-col items-center pr-2 pointer-events-none">
           <!-- เป้าหมายเกมย่อย: จานเลือกสีหลัก -->
-          <div data-tool="colors" onclick="handleToolClick('colors', event)" class="paint-tool flex gap-3 h-full items-center p-1 rounded">
-            <div class="flex flex-col items-center">
+          <div data-tool="colors" onclick="handleToolClick('colors', event)" class="paint-tool flex gap-3 h-full items-center p-1 rounded relative z-20 pointer-events-auto">
+            <div class="flex flex-col items-center pointer-events-none">
               <div id="current-color-box" class="w-8 h-8 bg-black border border-gray-300 rounded shadow-sm"></div>
               <span class="text-[9px] mt-1 font-bold">สีหลัก</span>
             </div>
-            <div class="grid grid-cols-7 gap-0.5 bg-gray-100 p-1 rounded">
+            <div class="grid grid-cols-7 gap-0.5 bg-gray-100 p-1 rounded pointer-events-auto">
               <div class="w-4 h-4 bg-black cursor-pointer hover:scale-110" onclick="changeColor('#000000', event)"></div>
               <div class="w-4 h-4 bg-gray-500 cursor-pointer hover:scale-110" onclick="changeColor('#6b7280', event)"></div>
               <div class="w-4 h-4 bg-red-600 cursor-pointer hover:scale-110" onclick="changeColor('#dc2626', event)"></div>
@@ -308,12 +313,12 @@
               <div class="w-4 h-4 bg-purple-500 cursor-pointer hover:scale-110" onclick="changeColor('#a855f7', event)"></div>
             </div>
             <!-- เป้าหมายเกมย่อย: ปุ่มแก้ไขสีเพิ่มเติม -->
-            <div data-tool="editcolors" onclick="handleToolClick('editcolors', event)" class="paint-tool flex flex-col items-center justify-center p-1 rounded cursor-pointer hover:bg-gray-100 px-1">
-              <div class="w-6 h-6 rounded border border-gray-300" style="background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);"></div>
-              <span class="text-[8px] mt-0.5 font-bold text-slate-600">แก้ไขสี</span>
+            <div data-tool="editcolors" onclick="handleToolClick('editcolors', event)" class="paint-tool flex flex-col items-center justify-center p-1 rounded cursor-pointer hover:bg-gray-100 px-1 relative z-20 pointer-events-auto">
+              <div class="w-6 h-6 rounded border border-gray-300 pointer-events-none" style="background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);"></div>
+              <span class="text-[8px] mt-0.5 font-bold text-slate-600 pointer-events-none">แก้ไขสี</span>
             </div>
           </div>
-          <span class="text-[10px] font-bold text-teal-600 mt-1">กล่องพาเลทสี</span>
+          <span class="text-[10px] font-bold text-teal-600 mt-1 pointer-events-none">กล่องพาเลทสี</span>
         </div>
       </div>
 
@@ -322,8 +327,8 @@
         <!-- เป้าหมายเกมย่อย: แผ่นกระดาษขาว Canvas -->
         <div id="zone-6" data-tool="canvas" onclick="handleToolClick('canvas', event); handleZoneClick(6);" class="paint-zone paint-tool relative bg-white shadow-md border border-gray-400 w-full max-w-[800px] h-[300px] md:h-[400px]">
           <!-- แคนวาสสำรองสำหรับการขีดเขียนจริงด้วยเมาส์/นิ้ว -->
-          <canvas id="drawing-canvas" width="800" height="400" class="absolute inset-0 z-0 w-full h-full"></canvas>
-          <div class="absolute inset-0 pointer-events-none opacity-50 overflow-hidden">
+          <canvas id="drawing-canvas" width="800" height="400" class="absolute inset-0 z-10 w-full h-full"></canvas>
+          <div class="absolute inset-0 pointer-events-none opacity-50 overflow-hidden z-0">
             <div class="absolute top-5 left-10 text-5xl text-yellow-400">☀️</div>
             <div class="absolute bottom-0 w-full h-1/4 bg-green-200 border-t-[3px] border-green-500 rounded-t-full"></div>
             <div class="absolute bottom-5 left-10 text-5xl text-red-500">🏠</div>
@@ -333,21 +338,21 @@
       </div>
 
       <!-- หมายเลข 7: แถบสถานะ (Status Bar) -->
-      <div id="zone-7" class="paint-zone bg-gray-100 border-t border-x border-gray-300 px-4 py-1 text-xs text-gray-600 flex flex-wrap justify-between items-center rounded-b-xl shrink-0" onclick="handleZoneClick(7)">
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-1 hover:bg-gray-200 px-1 rounded cursor-pointer">
-            <span class="text-gray-400">✛</span> <span id="mouse-coords">0, 0px</span>
+      <div id="zone-7" data-tool="zone7" class="paint-zone bg-gray-100 border-t border-x border-gray-300 px-4 py-1 text-xs text-gray-600 flex flex-wrap justify-between items-center rounded-b-xl shrink-0" onclick="handleZoneClick(7)">
+        <div class="flex items-center gap-4 pointer-events-none">
+          <div class="flex items-center gap-1 hover:bg-gray-200 px-1 rounded cursor-pointer pointer-events-auto">
+            <span class="text-gray-400 pointer-events-none">✛</span> <span id="mouse-coords" class="pointer-events-none">0, 0px</span>
           </div>
           <div class="hidden md:flex items-center gap-1 border-l border-gray-300 pl-4">
              📏 800 × 400px
           </div>
         </div>
         <!-- เป้าหมายเกมย่อย: ปุ่มและสไลเดอร์ซูม -->
-        <div data-tool="zoom" onclick="handleToolClick('zoom', event)" class="paint-tool flex items-center gap-2 p-1 rounded">
-          <span>100%</span>
-          <span class="cursor-pointer hover:text-black">➖</span>
+        <div data-tool="zoom" onclick="handleToolClick('zoom', event)" class="paint-tool flex items-center gap-2 p-1 rounded relative z-20 pointer-events-auto">
+          <span class="pointer-events-none">100%</span>
+          <span class="cursor-pointer hover:text-black pointer-events-none">➖</span>
           <input type="range" min="50" max="200" value="100" class="w-16 md:w-24 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer">
-          <span class="cursor-pointer hover:text-black">➕</span>
+          <span class="cursor-pointer hover:text-black pointer-events-none">➕</span>
         </div>
       </div>
     </div>
@@ -392,11 +397,11 @@
 
   <!-- INFO & DIALOG MODAL (สำหรับเรียนรู้ทั่วไปตอนคลิกโซนใหญ่) -->
   <div id="info-modal" class="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4">
-    <div class="bg-white rounded-[32px] p-6 max-w-lg w-full border-8 border-pink-400 shadow-[8px_8px_0px_#000] transform scale-90 transition-transform duration-300 relative" id="info-modal-content">
+    <div class="bg-white rounded-[32px] p-6 max-w-lg w-full border-8 border-transparent shadow-[8px_8px_0px_#000] transform scale-90 transition-transform duration-300 relative" id="info-modal-content">
       <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 hover:rotate-90 transition-transform text-3xl font-black bg-gray-100 w-10 h-10 rounded-full flex items-center justify-center z-10">&times;</button>
       <div class="flex justify-start items-center border-b-2 border-pink-100 pb-3 mb-4 pr-10">
         <div class="flex items-center gap-3">
-          <span id="modal-num" class="bg-yellow-400 text-white w-12 h-12 rounded-full flex items-center justify-center text-3xl font-black shadow-sm shrink-0">1</span>
+          <span id="modal-num" class="bg-gray-400 text-white w-12 h-12 rounded-full flex items-center justify-center text-3xl font-black shadow-sm shrink-0">1</span>
           <h2 id="modal-title" class="text-xl md:text-2xl font-extrabold text-indigo-700 leading-tight">แถบเครื่องมือ</h2>
         </div>
       </div>
@@ -567,15 +572,23 @@
 
     /* =========================================
        ข้อมูลรายละเอียดคำอธิบายเมื่อเอาเมาส์ชี้เครื่องมือ (Hover Tooltips Data)
-       ครอบคลุมทุกปุ่มบนโปรแกรม
+       ครอบคลุมทั้งเครื่องมือย่อยและโซนหมายเลข 1-7
        ========================================= */
     const tooltipsData = {
-      "save": { icon: "💾", name: "บันทึก (Save)", desc: "บันทึกผลงานวาดรูปแสนสวยเก็บไว้ในเครื่องคอมพิวเตอร์", example: "วาดรูปเสร็จแล้ว กดปุ่มนี้เพื่อป้องกันรูปหายไป" },
-      "file": { icon: "📁", name: "เมนูไฟล์ (File Menu)", desc: "เปิดแถบคำสั่งหลักในการจัดการเอกสาร", example: "คลิกเพื่อสั่งปรินต์รูปวาด หรือเปิดกระดาษใบใหม่" },
+      // โซนหลัก 1-7
+      "zone1": { icon: "💾", name: "1. แถบเครื่องมือด่วน", desc: "ปุ่มคำสั่งลัดที่เราใช้บ่อยที่สุดเพื่อความรวดเร็ว", example: "กดเพื่อบันทึกงาน (Save) หรือย้อนกลับ (Undo) ได้ทันที" },
+      "zone2": { icon: "📝", name: "2. แถบชื่อเรื่อง", desc: "บอกให้รู้ว่าไฟล์งานนี้ชื่ออะไร และเปิดโปรแกรมอะไรอยู่", example: "ถ้าเพิ่งเปิดโปรแกรม จะเขียนว่า 'ไม่มีชื่อ - Paint'" },
+      "zone3": { icon: "❌", name: "3. ปุ่มควบคุมหน้าต่าง", desc: "เอาไว้จัดการหน้าจอโปรแกรม เช่น พับเก็บหรือปิด", example: "กดกากบาทสีแดง ❌ เพื่อออกจากโปรแกรมเลย" },
+      "zone5": { icon: "🎨", name: "5. แถบริบบอน (Ribbon)", desc: "แผงเครื่องมือขนาดยักษ์ที่รวมทุกอย่างไว้ในที่เดียว", example: "จะหาดินสอ ยางลบ หรือจานสี ก็กดเลือกจากตรงนี้ได้เลย" },
+      "zone7": { icon: "🔍", name: "7. แถบสถานะ (Status Bar)", desc: "แถบด้านล่างสุด คอยบอกข้อมูลสำคัญของรูปภาพ", example: "ดูพิกัดเมาส์ หรือกดซูมเข้าซูมออกกระดาษวาดรูป" },
+      
+      // เครื่องมือย่อย
+      "save": { icon: "💾", name: "บันทึก (Save)", desc: "บันทึกผลงานวาดรูปแสนสวยเก็บไว้ในคอมพิวเตอร์", example: "วาดรูปเสร็จแล้ว กดปุ่มนี้เพื่อป้องกันรูปหายไป" },
+      "file": { icon: "📁", name: "4. ปุ่มไฟล์ (File Menu)", desc: "เปิดแถบเมนูหลักในการจัดการกระดาษและเอกสาร", example: "คลิกเพื่อสั่งปรินต์รูปวาด หรือเปิดกระดาษใบใหม่" },
       "cut": { icon: "✂️", name: "ตัด (Cut)", desc: "ตัดชิ้นงานที่เลือกอยู่ออกไปจากหน้ากระดาษ", example: "ตัดรูปก้อนเมฆที่วาดย้ายไปวางที่อื่นแทน" },
-      "copy": { icon: "📄", name: "คัดลอก (Copy)", desc: "ก๊อปปี้ชิ้นงานเดิมเตรียมนำไปวางซ้ำ", example: "วาดรูปดาว 1 ดวง แล้วกดคัดลอกเพื่อวางเพิ่มเป็น 10 ดวง" },
+      "copy": { icon: "📄", name: "คัดลอก (Copy)", desc: "ก๊อปปี้ชิ้นงานเดิมเตรียมนำไปวางซ้ำหลายๆ รอบ", example: "วาดรูปดาว 1 ดวง แล้วกดคัดลอกเพื่อวางเพิ่มเป็น 10 ดวง" },
       "paste": { icon: "📋", name: "วาง (Paste)", desc: "นำชิ้นงานที่เพิ่งกดคัดลอกหรือตัดมาวางลงกระดาษ", example: "กดวางรูปดาวที่เพิ่งคัดลอกไว้ลงมาบนท้องฟ้า" },
-      "selection": { icon: "⬚", name: "เลือกวัตถุ (Select)", desc: "ใช้เมาส์ลากกรอบคลุมพื้นที่รูปภาพที่ต้องการจัดการ", example: "คลุมกรอบเลือกรูปรถ เพื่อเตรียมย้ายตำแหน่งรถไปจอดที่อื่น" },
+      "selection": { icon: "⬚", name: "เลือกวัตถุ (Select)", desc: "ใช้เมาส์ลากกรอบคลุมพื้นที่รูปภาพที่ต้องการจัดการ", example: "คลุมกรอบเลือกรูปรถ เพื่อเตรียมย้ายตำแหน่งรถ" },
       "crop": { icon: "🔳", name: "ครอปภาพ (Crop)", desc: "ตัดขอบภาพส่วนเกินทิ้ง เหลือเฉพาะส่วนที่เลือกไว้", example: "ตัดภาพวิวออก ให้เหลือแค่หน้าตัวการ์ตูนตรงกลาง" },
       "resize": { icon: "📏", name: "เปลี่ยนขนาด (Resize)", desc: "ย่อหรือขยายสัดส่วนความกว้างยาวของรูปภาพ", example: "ขยายรูปบ้านให้มีขนาดใหญ่ขึ้น 2 เท่าจากเดิม" },
       "rotate": { icon: "↻", name: "หมุนภาพ (Rotate)", desc: "พลิกรูปภาพซ้าย-ขวา หรือหมุนกลับหัว", example: "หมุนรูปสามเหลี่ยมให้ยอดแหลมทิ่มกลับหัวลงมา" },
@@ -585,12 +598,12 @@
       "eraser": { icon: "🧽", name: "ยางลบ (Eraser)", desc: "ลบเส้นหรือสีส่วนที่ระบายผิดและไม่ต้องการออก", example: "ถูยางลบลบเส้นดินสอที่ลากเกินกรอบหน้าต่างออกมา" },
       "dropper": { icon: "💧", name: "ดูดสี (Color Picker)", desc: "ดูดสีเป๊ะๆ จากในรูปภาพเพื่อนำมาใช้ระบายต่อ", example: "ดูดสีแดงจากหลังคาบ้าน เพื่อเอาไปทาสีรถยนต์ให้เหมือนกัน" },
       "magnifier": { icon: "🔍", name: "แว่นขยาย (Magnifier)", desc: "ซูมหน้ากระดาษเข้าไปดูใกล้ๆ เพื่อวาดรายละเอียด", example: "ซูมเข้าไปใกล้ๆ เพื่อลบจุดดินสอเล็กๆ ที่ระบายเลอะ" },
-      "brush": { icon: "🖌️", name: "แปรงพู่กัน (Brushes)", desc: "วาดเส้นสีน้ำ สีเทียน หรือสเปรย์ด้วยหัวแปรงศิลปะแบบต่างๆ", example: "ใช้แปรงสีน้ำวาดก้อนเมฆให้ดูฟุ้งๆ สมจริง" },
+      "brush": { icon: "🖌️", name: "แปรงพู่กัน (Brushes)", desc: "วาดเส้นสีน้ำ สีเทียน หรือสเปรย์ด้วยหัวแปรงต่างๆ", example: "ใช้แปรงสีน้ำวาดก้อนเมฆให้ดูฟุ้งๆ สมจริง" },
       "shapes": { icon: "⬜", name: "รูปร่าง (Shapes)", desc: "กล่องเครื่องมือวาดรูปทรงเรขาคณิตสำเร็จรูป", example: "คลิกเลือกรูปดาว แล้วลากวาดดาวที่สมบูรณ์แบบได้ทันที" },
       "colors": { icon: "🌈", name: "พาเลทสี (Color Palette)", desc: "กล่องจานสีสำหรับเปลี่ยนสีดินสอ พู่กัน หรือสีถังเท", example: "คลิกช่องสีชมพูเพื่อเปลี่ยนสีดินสอเป็นสีชมพูสุดน่ารัก" },
       "editcolors": { icon: "🎨", name: "แก้ไขสี (Edit Colors)", desc: "เปิดแผงผสมสีพิเศษเพื่อเลือกสีใหม่ที่ไม่มีในกล่อง", example: "ผสมสีฟ้าอมเขียวน้ำทะเลแบบพิเศษเพื่อระบายสีปลาหมึก" },
-      "canvas": { icon: "📝", name: "แผ่นกระดาษ (Canvas)", desc: "พื้นที่หลักสำหรับลงมือวาดภาพระบายสีสร้างสรรค์", example: "คลิกเมาส์ค้างแล้วลากวาดรูปต่างๆ ลงบนพื้นที่สีขาวกว้างๆ นี้เลย!" },
-      "zoom": { icon: "🔎", name: "ย่อ-ขยายมุมมอง (Zoom Slider)", desc: "แถบเลื่อนด้านล่างสำหรับปรับมุมมองกระดาษให้เห็นใกล้หรือไกล", example: "เลื่อนแถบไปทางเครื่องหมายบวก (➕) เพื่อซูมเข้าไปดูรายละเอียดงานชัดๆ" }
+      "canvas": { icon: "📝", name: "6. พื้นที่วาดรูป (Canvas)", desc: "กระดาษวาดเขียนแผ่นใหญ่ตรงกลางโปรแกรม", example: "ใช้เมาส์ลากวาดรูประบายสีลงบนพื้นที่สีขาวกว้างๆ นี้เลย" },
+      "zoom": { icon: "🔎", name: "ย่อ-ขยาย (Zoom Slider)", desc: "แถบเลื่อนด้านล่างสำหรับปรับให้เห็นใกล้หรือไกล", example: "เลื่อนแถบไปทางเครื่องหมายบวก (➕) เพื่อซูมเข้าไปดูชัดๆ" }
     };
 
     /* =========================================
@@ -650,8 +663,14 @@
       const descEl = document.getElementById('tooltip-desc');
       const exampleEl = document.getElementById('tooltip-example');
 
-      document.querySelectorAll('.paint-tool').forEach(function(element) {
-        element.addEventListener('mouseenter', function(e) {
+      // ตรวจจับการ Hover ทั้งโซนเป้าหมาย (data-tool)
+      const hoverElements = document.querySelectorAll('[data-tool]');
+      
+      for (let i = 0; i < hoverElements.length; i++) {
+        hoverElements[i].addEventListener('mouseenter', function(e) {
+          // หยุด Event ไม่ให้ทะลุไปทับกับโซนแม่
+          e.stopPropagation();
+          
           // ถ้ากำลังเล่นเกมทายคำถามอยู่ จะไม่แสดงคำอธิบายเพื่อความท้าทาย
           if (currentGameState.isARPlaying) return;
 
@@ -671,11 +690,11 @@
             let leftPos = rect.left;
 
             // ป้องกันกล่องข้อความล้นขอบจอด้านขวาและด้านล่าง
-            const tooltipWidth = 256; // 64 * 4 (Tailwind w-64)
+            const tooltipWidth = 256; 
             if (leftPos + tooltipWidth > window.innerWidth) {
               leftPos = window.innerWidth - tooltipWidth - 20;
             }
-            if (topPos + 150 > window.innerHeight) { // 150px ประมาณความสูง Tooltip
+            if (topPos + 150 > window.innerHeight) { 
               topPos = rect.top - 160;
             }
 
@@ -690,7 +709,7 @@
           }
         });
 
-        element.addEventListener('mouseleave', function() {
+        hoverElements[i].addEventListener('mouseleave', function() {
           tooltip.classList.remove('opacity-100', 'scale-100');
           tooltip.classList.add('opacity-0', 'scale-95');
           
@@ -700,7 +719,7 @@
             }
           }, 150);
         });
-      });
+      }
     });
 
     /* =========================================
@@ -715,35 +734,53 @@
     function closeAlertModal() {
       document.getElementById('alert-modal').classList.add('hidden');
       
-      // บังคับเปลี่ยนทิศทางไปใช้โหมดเกมปกติ (คลิกเมาส์/สัมผัส) แทน AR ที่เปิดกล้องไม่ได้
+      // บังคับเตรียม state ก่อนเล่น
+      currentGameState.isARPlaying = true;
+      if (currentGameState.score === 0 && currentGameState.level === 1) {
+        document.getElementById('game-score').innerText = '0';
+        document.getElementById('game-level').innerText = '1';
+      }
+
       document.body.classList.add('ar-playing');
+      
+      // ซ่อนอุปกรณ์เกี่ยวกับกล้องทั้งหมด
+      const hudStatus = document.getElementById('hud-camera-status');
+      if(hudStatus) hudStatus.classList.add('hidden');
+      document.getElementById('ar-preview').classList.add('hidden');
+      document.getElementById('ar-cursor').classList.add('hidden');
+
       document.getElementById('game-hud').classList.remove('hidden');
       document.getElementById('mission-text').innerHTML = '<span class="text-xl animate-pulse">🖱 *โหมดใช้เมาส์*</span> ตามหาเครื่องมือที่ครูกำหนดแล้วใช้เมาส์คลิกเพื่อเก็บคะแนนได้เลยครับ!';
-      nextMission();
+      
+      if (!currentGameState.currentMission) {
+        nextMission();
+      }
     }
 
     function startARGame() {
       initAudio();
       playSound('magic');
       
+      currentGameState.score = 0;
+      currentGameState.level = 1;
+      document.getElementById('game-score').innerText = currentGameState.score;
+      document.getElementById('game-level').innerText = currentGameState.level;
+      
       // ด่านแรก: เช็คว่าไลบรารีกล้องของ Google โหลดสำเร็จหรือไม่
       if (typeof Hands === 'undefined' || typeof Camera === 'undefined') {
         showCustomAlert(
           "กล้องขัดข้องเล็กน้อย",
-          "ไม่สามารถโหลดไฟล์เชื่อมต่อกล้องเนื่องจากข้อจำกัดบราวเซอร์ฉากหลัง แต่น้องๆ ยังสนุกกับการสะสมคะแนนได้ทันทีใน 'โหมดคลิกเมาส์จับคู่' ครับ!"
+          "ไม่สามารถโหลดไฟล์เชื่อมต่อกล้องได้เนื่องจากข้อจำกัดบราวเซอร์ฉากหลัง แต่น้องๆ ยังสนุกกับการสะสมคะแนนได้ทันทีใน 'โหมดคลิกเมาส์จับคู่' ครับ!"
         );
         return;
       }
 
       currentGameState.isARPlaying = true;
-      currentGameState.score = 0;
-      currentGameState.level = 1;
-      
       document.body.classList.add('ar-playing');
-      document.getElementById('game-score').innerText = currentGameState.score;
-      document.getElementById('game-level').innerText = currentGameState.level;
       
       // รีเซ็ตแถบไฟสถานะกล้องใน HUD
+      const hudStatus = document.getElementById('hud-camera-status');
+      if(hudStatus) hudStatus.classList.remove('hidden');
       updateHUDCameraStatus('red', 'ระบบกำลังเปิดกล้อง...');
       
       // แสดงแผงควบคุมเกมย่อย
@@ -760,6 +797,7 @@
     function stopARGame() {
       playSound('pop');
       currentGameState.isARPlaying = false;
+      currentGameState.currentMission = null;
       
       document.body.classList.remove('ar-playing');
       clearAllHints();
@@ -808,7 +846,7 @@
     }
 
     function checkAnswer(selectedTool) {
-      if (!currentGameState.isARPlaying) return;
+      if (!currentGameState.isARPlaying || !currentGameState.currentMission) return;
       
       if (selectedTool === currentGameState.currentMission.tool) {
         playSound('correct');
@@ -831,6 +869,9 @@
         banner.className = "text-base md:text-xl font-extrabold text-green-700 text-center w-full bg-green-100 py-2.5 rounded-2xl border-4 border-green-400 animate-bounce";
         banner.innerHTML = "🎉 ถูกต้องแล้วครับ! ยอดเยี่ยมมาก ✨";
         
+        // หยุดทายคำตอบชั่วคราวเพื่อป้องกันการกดซ้ำซ้อนรัวๆ
+        currentGameState.currentMission = null; 
+
         setTimeout(function() {
           banner.className = "text-base md:text-xl font-extrabold text-slate-800 text-center w-full bg-yellow-50 py-2 rounded-2xl border border-yellow-200 flex justify-center items-center gap-2";
           nextMission();
@@ -849,17 +890,28 @@
     }
 
     function clearAllHints() {
-      document.querySelectorAll('.paint-tool').forEach(function(el) {
-        el.classList.remove('tool-target-hint');
-      });
+      const tools = document.querySelectorAll('.paint-tool');
+      for (let i = 0; i < tools.length; i++) {
+        tools[i].classList.remove('tool-target-hint');
+      }
     }
 
     /* =========================================
        กล่องแผงอธิบายชุดความรู้โซนหลัก (Learn Mode Only)
        ========================================= */
+    const colorStyles = {
+      "purple": { border: "border-purple-400", bg: "bg-purple-500" },
+      "blue": { border: "border-blue-400", bg: "bg-blue-500" },
+      "red": { border: "border-red-400", bg: "bg-red-500" },
+      "pink": { border: "border-pink-400", bg: "bg-pink-500" },
+      "yellow": { border: "border-yellow-400", bg: "bg-yellow-500" }
+    };
+
     function openModal(zoneId) {
       playSound('pop');
       const data = zonesData[zoneId];
+      if (!data) return;
+
       document.getElementById('modal-num').innerText = zoneId;
       document.getElementById('modal-title').innerText = data.title;
       document.getElementById('modal-icon').innerText = data.icon;
@@ -868,8 +920,10 @@
       const modal = document.getElementById('info-modal');
       const content = document.getElementById('info-modal-content');
       
-      content.className = 'bg-white rounded-[32px] p-6 max-w-lg w-full border-8 border-' + data.color + '-400 shadow-[8px_8px_0px_#000] transform scale-90 transition-transform duration-300 relative';
-      document.getElementById('modal-num').className = 'bg-' + data.color + '-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-3xl font-black shadow-sm shrink-0';
+      const style = colorStyles[data.color] || colorStyles["blue"];
+
+      content.className = 'bg-white rounded-[32px] p-6 max-w-lg w-full border-8 ' + style.border + ' shadow-[8px_8px_0px_#000] transform scale-90 transition-transform duration-300 relative';
+      document.getElementById('modal-num').className = style.bg + ' text-white w-12 h-12 rounded-full flex items-center justify-center text-3xl font-black shadow-sm shrink-0';
       
       modal.classList.remove('hidden');
       setTimeout(function() {
@@ -1030,7 +1084,9 @@
               cameraInstance = new Camera(videoElement, {
                 onFrame: async function() {
                   if (currentGameState.isARPlaying) {
-                    await hands.send({ image: videoElement });
+                    try {
+                      await hands.send({ image: videoElement });
+                    } catch(sendErr) { /* ignore safe DOMException */ }
                   }
                 },
                 width: 640,
@@ -1053,7 +1109,7 @@
     }
 
     /* =========================================
-       ระบบวาดเขียนจริงบนแผ่นกระดาษขาวแคนวาส 
+       ระบบวาดเขียนจริงบนแผ่นกระดาษขาวแคนวาส (รองรับเมาส์และนิ้วสัมผัส)
        ========================================= */
     const drawingCanvas = document.getElementById('drawing-canvas');
     const drawCtx = drawingCanvas ? drawingCanvas.getContext('2d') : null;
@@ -1073,13 +1129,23 @@
     function getDrawPos(canvas, evt) {
       if (!canvas) return { x: 0, y: 0 };
       const rect = canvas.getBoundingClientRect();
+      
+      // รองรับการทัชสกรีนบนไอแพด
+      let clientX = evt.clientX;
+      let clientY = evt.clientY;
+      if (evt.touches && evt.touches.length > 0) {
+        clientX = evt.touches[0].clientX;
+        clientY = evt.touches[0].clientY;
+      }
+
       return {
-        x: (evt.clientX - rect.left) * (canvas.width / rect.width),
-        y: (evt.clientY - rect.top) * (canvas.height / rect.height)
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
       };
     }
 
     if (drawingCanvas && drawCtx) {
+      // สำหรับ Mouse
       drawingCanvas.addEventListener('mousedown', function(e) {
         e.stopPropagation();
         isPainting = true;
@@ -1093,7 +1159,6 @@
         if (coordDisplay) {
           coordDisplay.innerText = Math.round(pos.x) + ', ' + Math.round(pos.y) + 'px';
         }
-        
         if (isPainting) {
           drawCtx.lineTo(pos.x, pos.y);
           drawCtx.stroke();
@@ -1102,6 +1167,31 @@
 
       drawingCanvas.addEventListener('mouseup', function() { isPainting = false; });
       drawingCanvas.addEventListener('mouseleave', function() { isPainting = false; });
+      
+      // สำหรับ Touch Screen (มือถือ / ไอแพด)
+      drawingCanvas.addEventListener('touchstart', function(e) {
+        e.stopPropagation();
+        e.preventDefault(); // กันหน้าจอเลื่อนเวลาวาดรูป
+        isPainting = true;
+        const pos = getDrawPos(drawingCanvas, e);
+        drawCtx.beginPath();
+        drawCtx.moveTo(pos.x, pos.y);
+      }, { passive: false });
+
+      drawingCanvas.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+        const pos = getDrawPos(drawingCanvas, e);
+        if (coordDisplay) {
+          coordDisplay.innerText = Math.round(pos.x) + ', ' + Math.round(pos.y) + 'px';
+        }
+        if (isPainting) {
+          drawCtx.lineTo(pos.x, pos.y);
+          drawCtx.stroke();
+        }
+      }, { passive: false });
+
+      drawingCanvas.addEventListener('touchend', function() { isPainting = false; });
+      drawingCanvas.addEventListener('touchcancel', function() { isPainting = false; });
     }
 
     function changeColor(hexColor, event) {
@@ -1173,6 +1263,7 @@
     window.addEventListener('click', function(e) {
       if (e.target === document.getElementById('info-modal')) closeModal();
       if (e.target === document.getElementById('tips-modal')) closeTips();
+      if (e.target === document.getElementById('alert-modal')) closeAlertModal();
     });
 
   </script>
